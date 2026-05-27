@@ -5,10 +5,23 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Run Flower Shop",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/app.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "serverReadyAction": {
+                "action": "openExternally",
+                "pattern": "Running on (http://[^ ]+)",
+                "uriFormat": "%s"
+            }
+        },
+        {
+            "name": "Open Flower Shop in Chrome",
             "type": "chrome",
             "request": "launch",
-            "name": "Launch Chrome against localhost",
-            "url": "http://localhost:8080",
+            "url": "http://127.0.0.1:5000",
             "webRoot": "${workspaceFolder}"
         }
     ]

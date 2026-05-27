@@ -14,27 +14,58 @@ def load_data():
 
 
 def calculate_total(cart):
-    total = sum(item['price'] * item['quantity'] for item in cart)
-    return total
+    return sum(item['price'] * item['quantity'] for item in cart)
+
+
+def make_cart_item(flower, details):
+    if not flower:
+        return None
+
+    if not isinstance(details, dict):
+        return None
+
+    try:
+        price = float(details['price'])
+        quantity = int(details['quantity'])
+    except (KeyError, TypeError, ValueError):
+        return None
+
+    addons = details.get('addons', [])
+    if not isinstance(addons, list):
+        addons = []
+
+    if quantity < 1:
+        return None
+
+    return {
+        'flower': flower,
+        'addons': addons,
+        'price': price,
+        'quantity': quantity
+    }
 
 
 def get_cart():
     cart = session.get('cart', [])
+    clean_cart = []
 
     if isinstance(cart, dict):
-        cart = [
-            {
-                'flower': flower,
-                'addons': [],
-                'price': details['price'],
-                'quantity': details['quantity']
-            }
-            for flower, details in cart.items()
-        ]
-        session['cart'] = cart
+        for flower, details in cart.items():
+            item = make_cart_item(flower, details)
+            if item:
+                clean_cart.append(item)
+    elif isinstance(cart, list):
+        for item in cart:
+            if isinstance(item, dict):
+                item = make_cart_item(item.get('flower'), item)
+                if item:
+                    clean_cart.append(item)
+
+    if clean_cart != cart:
+        session['cart'] = clean_cart
         session.modified = True
 
-    return cart
+    return clean_cart
 
 
 @app.route("/")
@@ -53,8 +84,12 @@ def home():
 
 @app.route('/add_to_cart', methods=['POST'])
 def add_to_cart():
-    flower = request.form['flower']
-    quantity = int(request.form['quantity'])
+    flower = request.form.get('flower')
+    try:
+        quantity = int(request.form.get('quantity', 1))
+    except ValueError:
+        quantity = 1
+
     selected_addons = request.form.getlist('addons')
     flowers, addons = load_data()
     cart = get_cart()
@@ -62,6 +97,9 @@ def add_to_cart():
     if flower not in flowers:
         flash("Invalid flower selected.")
         return redirect(url_for('home'))
+
+    if quantity < 1:
+        quantity = 1
 
     selected_addons = [
         addon for addon in selected_addons
@@ -114,4 +152,4 @@ def invoices():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, use_reloader=False)
