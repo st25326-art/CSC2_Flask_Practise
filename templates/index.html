@@ -3,20 +3,56 @@
 {% block title %}Flower Shop{% endblock %}
 
 {% block content %}
-<h2>Order Flowers</h2>
+<section class="intro">
+  <div>
+    <h2>Build a bouquet</h2>
+    <p>Choose fresh flowers, add a gift, and review everything in your cart.</p>
+  </div>
+  <p class="intro-note">Open today for pickup and delivery.</p>
+</section>
+
+<section class="flower-list" aria-label="Available flowers">
+  {% for flower, details in flowers.items() %}
+  <article class="flower-card">
+    <span class="flower-mark"></span>
+    <h3>{{ flower }}</h3>
+    <p>${{ '%.2f' % details['price'] }}</p>
+    <small>{{ details['stock'] }} in stock</small>
+  </article>
+  {% endfor %}
+</section>
 
 <form action="{{ url_for('add_to_cart') }}" method="post">
-  <label for="flower">Flower</label>
-  <select name="flower" id="flower">
-    {% for flower, details in flowers.items() %}
-    <option value="{{ flower }}">{{ flower }} - ${{ details['price'] }}</option>
-    {% endfor %}
-  </select>
+  <h2>Order</h2>
 
-  <label for="quantity">Quantity</label>
-  <input id="quantity" type="number" name="quantity" value="1" min="1">
+  <div class="form-row">
+    <label for="flower">Flower</label>
+    <select name="flower" id="flower">
+      {% for flower, details in flowers.items() %}
+      <option value="{{ flower }}">{{ flower }} - ${{ details['price'] }}</option>
+      {% endfor %}
+    </select>
+  </div>
 
-  <button type="submit">Add</button>
+  <div class="form-row">
+    <label for="quantity">Quantity</label>
+    <input id="quantity" type="number" name="quantity" value="1" min="1">
+  </div>
+
+  <fieldset>
+    <legend>Add-ons</legend>
+    <div class="addons">
+      {% for addon, details in addons.items() %}
+      <label class="addon-option">
+        <input type="checkbox" name="addons" value="{{ addon }}">
+        <span>{{ addon }}</span>
+        <small>${{ '%.2f' % details['price'] }}</small>
+      </label>
+      {% endfor %}
+    </div>
+  </fieldset>
+
+  <button type="submit">Add to cart</button>
 </form>
 
 {% with messages = get_flashed_messages() %}
@@ -32,11 +68,18 @@
 <h2>Cart</h2>
 {% if cart %}
   <ul class="cart">
-    {% for item, details in cart.items() %}
+    {% for item in cart %}
     <li>
-      <span>{{ item }} x {{ details['quantity'] }}</span>
-      <span>${{ '%.2f' % (details['quantity'] * details['price']) }}</span>
-      <a href="{{ url_for('remove_from_cart', item=item) }}">Remove</a>
+      <div>
+        <strong>{{ item['flower'] }} x {{ item['quantity'] }}</strong>
+        {% if item['addons'] %}
+        <small>{{ item['addons'] | join(', ') }}</small>
+        {% else %}
+        <small>No add-ons</small>
+        {% endif %}
+      </div>
+      <span>${{ '%.2f' % (item['quantity'] * item['price']) }}</span>
+      <a href="{{ url_for('remove_from_cart', item_index=loop.index0) }}">Remove</a>
     </li>
     {% endfor %}
   </ul>

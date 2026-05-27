@@ -2,16 +2,25 @@
     "Chocolate": {
         "price": 12
     },
-
     "Teddy Bear": {
         "price": 18
     },
-
     "Gift Card": {
         "price": 5
     },
-
     "Balloons": {
         "price": 10
+    },
+    "Ribbon Wrap": {
+        "price": 4
+    },
+    "Glass Vase": {
+        "price": 16
+    },
+    "Greeting Card": {
+        "price": 6
+    },
+    "Premium Delivery": {
+        "price": 14
     }
 }

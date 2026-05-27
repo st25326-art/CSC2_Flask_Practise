@@ -3,19 +3,40 @@
         "price": 15,
         "stock": 40
     },
-
     "Lily": {
         "price": 20,
         "stock": 12
     },
-
     "Daisy": {
         "price": 7,
         "stock": 60
     },
-
     "Orchid": {
         "price": 25,
         "stock": 8
+    },
+    "Tulip": {
+        "price": 10,
+        "stock": 35
+    },
+    "Sunflower": {
+        "price": 12,
+        "stock": 28
+    },
+    "Peony": {
+        "price": 22,
+        "stock": 14
+    },
+    "Hydrangea": {
+        "price": 18,
+        "stock": 20
+    },
+    "Carnation": {
+        "price": 8,
+        "stock": 50
+    },
+    "Lavender": {
+        "price": 9,
+        "stock": 45
     }
 }
