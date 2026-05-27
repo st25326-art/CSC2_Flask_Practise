@@ -8,9 +8,7 @@ app.secret_key = 'supersecretkey'
 def load_data():
     with open("data/flowers.json") as file:
         flowers = json.load(file)
-    with open("data/addons.json") as file:
-        addons = json.load(file)
-    return flowers, addons
+    return flowers
 
 
 def calculate_total(cart):
@@ -20,13 +18,12 @@ def calculate_total(cart):
 
 @app.route("/")
 def home():
-    flowers, addons = load_data()
+    flowers = load_data()
     cart = session.get('cart', {})
     total = calculate_total(cart)
     return render_template(
         "index.html",
         flowers=flowers,
-        addons=addons,
         cart=cart,
         total=total
     )
@@ -36,7 +33,7 @@ def home():
 def add_to_cart():
     flower = request.form['flower']
     quantity = int(request.form['quantity'])
-    flowers, addons = load_data()
+    flowers = load_data()
     cart = session.get('cart', {})
 
     if flower not in flowers:
