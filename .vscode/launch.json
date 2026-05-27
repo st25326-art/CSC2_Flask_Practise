@@ -13,8 +13,8 @@
             "justMyCode": true,
             "serverReadyAction": {
                 "action": "openExternally",
-                "pattern": "Running on (http://[^ ]+)",
-                "uriFormat": "%s"
+                "pattern": "Running on http://127\\.0\\.0\\.1:5000",
+                "uriFormat": "http://127.0.0.1:5000"
             }
         },
         {
