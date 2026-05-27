@@ -1,0 +1,21 @@
+{
+    "Rose": {
+        "price": 15,
+        "stock": 40
+    },
+
+    "Lily": {
+        "price": 20,
+        "stock": 12
+    },
+
+    "Daisy": {
+        "price": 7,
+        "stock": 60
+    },
+
+    "Orchid": {
+        "price": 25,
+        "stock": 8
+    }
+}

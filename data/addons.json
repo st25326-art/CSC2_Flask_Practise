@@ -1,0 +1,17 @@
+{
+    "Chocolate": {
+        "price": 12
+    },
+
+    "Teddy Bear": {
+        "price": 18
+    },
+
+    "Gift Card": {
+        "price": 5
+    },
+
+    "Balloons": {
+        "price": 10
+    }
+}
