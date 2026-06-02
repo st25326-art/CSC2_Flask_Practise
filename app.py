@@ -1,42 +1,33 @@
-from flask import Flask, flash, redirect, render_template, request, session, url_for
 import json
+import datetime
+from flask import Flask, render_template, request, session, redirect, url_for, flash
 
 app = Flask(__name__)
-app.secret_key = 'supersecretkey'
+app.secret_key = 'your_secret_key_here'  # keep your existing secret key if you have one
 
-
+# Load flowers and addons data from JSON files
 def load_data():
-    with open("data/flowers.json") as file:
-        flowers = json.load(file)
-    with open("data/addons.json") as file:
-        addons = json.load(file)
+    with open('data/flowers.json') as f:
+        flowers = json.load(f)
+    with open('data/addons.json') as f:
+        addons = json.load(f)
     return flowers, addons
 
-
-def calculate_total(cart):
-    return sum(item['price'] * item['quantity'] for item in cart)
-
+# Calculate total cost based on cart contents and selected addons
+def calculate_total(cart, selected_addons={}):
+    flower_subtotal = sum(item['price'] * item['quantity'] for item in cart)
+    addon_subtotal = sum(selected_addons.values())
+    total = flower_subtotal + addon_subtotal
+    return total, flower_subtotal, addon_subtotal
 
 def make_cart_item(flower, details):
-    if not flower:
-        return None
-
     if not isinstance(details, dict):
         return None
-
-    try:
-        price = float(details['price'])
-        quantity = int(details['quantity'])
-    except (KeyError, TypeError, ValueError):
-        return None
-
+    quantity = details.get('quantity', 0)
+    price = details.get('price', 0)
     addons = details.get('addons', [])
-    if not isinstance(addons, list):
-        addons = []
-
     if quantity < 1:
         return None
-
     return {
         'flower': flower,
         'addons': addons,
@@ -44,11 +35,9 @@ def make_cart_item(flower, details):
         'quantity': quantity
     }
 
-
 def get_cart():
     cart = session.get('cart', [])
     clean_cart = []
-
     if isinstance(cart, dict):
         for flower, details in cart.items():
             item = make_cart_item(flower, details)
@@ -57,99 +46,130 @@ def get_cart():
     elif isinstance(cart, list):
         for item in cart:
             if isinstance(item, dict):
-                item = make_cart_item(item.get('flower'), item)
-                if item:
-                    clean_cart.append(item)
-
+                cleaned = make_cart_item(item.get('flower'), item)
+                if cleaned:
+                    clean_cart.append(cleaned)
     if clean_cart != cart:
         session['cart'] = clean_cart
         session.modified = True
-
     return clean_cart
-
 
 @app.route("/")
 def home():
     flowers, addons = load_data()
     cart = get_cart()
-    total = calculate_total(cart)
+    selected_addons = session.get('selected_addons', {})
+    total, flower_subtotal, addon_subtotal = calculate_total(cart, selected_addons)
     return render_template(
         "index.html",
         flowers=flowers,
         addons=addons,
         cart=cart,
-        total=total
+        total=total,
+        flower_subtotal=flower_subtotal,
+        addon_subtotal=addon_subtotal,
+        selected_addons=selected_addons
     )
-
 
 @app.route('/add_to_cart', methods=['POST'])
 def add_to_cart():
     flower = request.form.get('flower')
-    try:
-        quantity = int(request.form.get('quantity', 1))
-    except ValueError:
-        quantity = 1
-
-    selected_addons = request.form.getlist('addons')
-    flowers, addons = load_data()
-    cart = get_cart()
+    quantity = int(request.form.get('quantity', 1))
+    flowers, _ = load_data()
 
     if flower not in flowers:
-        flash("Invalid flower selected.")
+        flash("Flower not found.")
         return redirect(url_for('home'))
 
-    if quantity < 1:
-        quantity = 1
+    price = flowers[flower]['price']
+    cart = get_cart()
 
-    selected_addons = [
-        addon for addon in selected_addons
-        if addon in addons
-    ]
-    addon_total = sum(addons[addon]['price'] for addon in selected_addons)
+    for item in cart:
+        if item['flower'] == flower:
+            item['quantity'] += quantity
+            session['cart'] = cart
+            session.modified = True
+            flash(f"{quantity} {flower}(s) added to cart.")
+            return redirect(url_for('home'))
 
     cart.append({
         'flower': flower,
-        'addons': selected_addons,
-        'price': flowers[flower]['price'] + addon_total,
-        'quantity': quantity
+        'price': price,
+        'quantity': quantity,
+        'addons': []
     })
-
     session['cart'] = cart
     session.modified = True
-    flash(f"Added {quantity} {flower} order to the cart.")
-
+    flash(f"{quantity} {flower}(s) added to cart.")
     return redirect(url_for('home'))
 
-
-@app.route('/remove_from_cart/<int:item_index>')
-def remove_from_cart(item_index):
+@app.route('/remove_from_cart/<flower>')
+def remove_from_cart(flower):
     cart = get_cart()
-
-    if 0 <= item_index < len(cart):
-        removed_item = cart.pop(item_index)
-        session['cart'] = cart
-        session.modified = True
-        flash(f"Removed {removed_item['flower']} from the cart.")
-    else:
-        flash("Item not found in cart")
-
+    cart = [item for item in cart if item['flower'] != flower]
+    session['cart'] = cart
+    session.modified = True
+    flash(f"Removed all {flower.capitalize()} from the cart.")
     return redirect(url_for('home'))
 
+# Add selected addons to the session
+@app.route('/select_addon', methods=['POST'])
+def select_addon():
+    selected_addons = {}
+    _, addons = load_data()
+    selected_keys = request.form.getlist('addons')
+    if not selected_keys:
+        flash("No add-ons selected.")
+    else:
+        for addon in selected_keys:
+            if addon in addons:
+                selected_addons[addon] = float(addons[addon]['price'])
+        flash(f"{len(selected_addons)} add-on(s) added to cart.")
+    session['selected_addons'] = selected_addons
+    session.modified = True
+    return redirect(url_for('home'))
+
+# Clear cart and addons from the session (cancel current order)
+@app.route('/cancel_order', methods=['POST'])
+def cancel_order():
+    session.pop('cart', None)
+    session.pop('selected_addons', None)
+    session.modified = True
+    flash("Order cancelled. Your cart has been emptied.")
+    return redirect(url_for('home'))
+
+# Check out current order
+@app.route('/checkout', methods=['POST'])
+def checkout():
+    customer_name = request.form['customer_name'].strip().title()
+    if not customer_name:
+        flash("Customer name is required.")
+        return redirect(url_for('home'))
+    cart = get_cart()
+    selected_addons = session.get('selected_addons', {})
+    if not cart:
+        flash("Your cart is empty.")
+        return redirect(url_for('home'))
+    total, flower_subtotal, addon_subtotal = calculate_total(cart, selected_addons)
+    invoice_date = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    invoice_number = f"INV_{customer_name.replace(' ', '_')}_{invoice_date}"
+    session.pop('cart', None)
+    session.pop('selected_addons', None)
+    session.modified = True
+    return render_template('invoices.html',
+        customer_name=customer_name,
+        cart=cart,
+        selected_addons=selected_addons,
+        total=total,
+        flower_subtotal=flower_subtotal,
+        addon_subtotal=addon_subtotal,
+        invoice_number=invoice_number,
+        invoice_date=invoice_date
+    )
 
 @app.route('/about')
 def about():
     return render_template('about.html')
 
-
-@app.route('/order_history')
-def order_history():
-    return render_template('order_history.html')
-
-
-@app.route('/invoices')
-def invoices():
-    return render_template('invoices.html')
-
-
-if __name__ == "__main__":
-    app.run(debug=True, use_reloader=False)
+if __name__ == '__main__':
+    app.run(debug=True)
