@@ -3,7 +3,7 @@ import datetime
 from flask import Flask, render_template, request, session, redirect, url_for, flash
 
 app = Flask(__name__)
-app.secret_key = 'your_secret_key_here'  # keep your existing secret key if you have one
+app.secret_key = 'csc2_flower_shop_key'
 
 # Load flowers and addons data from JSON files
 def load_data():
@@ -14,7 +14,9 @@ def load_data():
     return flowers, addons
 
 # Calculate total cost based on cart contents and selected addons
-def calculate_total(cart, selected_addons={}):
+def calculate_total(cart, selected_addons=None):
+    if selected_addons is None:
+        selected_addons = {}
     flower_subtotal = sum(item['price'] * item['quantity'] for item in cart)
     addon_subtotal = sum(selected_addons.values())
     total = flower_subtotal + addon_subtotal
@@ -26,7 +28,7 @@ def make_cart_item(flower, details):
     quantity = details.get('quantity', 0)
     price = details.get('price', 0)
     addons = details.get('addons', [])
-    if quantity < 1:
+    if not flower or quantity < 1:
         return None
     return {
         'flower': flower,
@@ -49,19 +51,18 @@ def get_cart():
                 cleaned = make_cart_item(item.get('flower'), item)
                 if cleaned:
                     clean_cart.append(cleaned)
-    if clean_cart != cart:
-        session['cart'] = clean_cart
-        session.modified = True
+    session['cart'] = clean_cart
+    session.modified = True
     return clean_cart
 
-@app.route("/")
+@app.route('/')
 def home():
     flowers, addons = load_data()
     cart = get_cart()
     selected_addons = session.get('selected_addons', {})
     total, flower_subtotal, addon_subtotal = calculate_total(cart, selected_addons)
     return render_template(
-        "index.html",
+        'index.html',
         flowers=flowers,
         addons=addons,
         cart=cart,
@@ -129,7 +130,7 @@ def select_addon():
     session.modified = True
     return redirect(url_for('home'))
 
-# Clear cart and addons from the session (cancel current order)
+# Clear cart and addons from session (cancel current order)
 @app.route('/cancel_order', methods=['POST'])
 def cancel_order():
     session.pop('cart', None)
@@ -138,10 +139,10 @@ def cancel_order():
     flash("Order cancelled. Your cart has been emptied.")
     return redirect(url_for('home'))
 
-# Check out current order
+# Checkout current order
 @app.route('/checkout', methods=['POST'])
 def checkout():
-    customer_name = request.form['customer_name'].strip().title()
+    customer_name = request.form.get('customer_name', '').strip().title()
     if not customer_name:
         flash("Customer name is required.")
         return redirect(url_for('home'))
@@ -170,6 +171,10 @@ def checkout():
 @app.route('/about')
 def about():
     return render_template('about.html')
+
+@app.route('/order_history')
+def order_history():
+    return render_template('order_history.html')
 
 if __name__ == '__main__':
     app.run(debug=True)

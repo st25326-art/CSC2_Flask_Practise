@@ -21,7 +21,7 @@
   {% endif %}
 {% endwith %}
 
-<!-- Flower cards display -->
+<!-- Flower cards -->
 <section class="flower-list" aria-label="Available flowers">
   {% for flower, details in flowers.items() %}
     <article class="flower-card">
@@ -68,28 +68,35 @@
 <!-- Cart section -->
 <section class="cart">
   <h2>Your Cart</h2>
+
   {% if cart %}
     <ul>
       {% for item in cart %}
         <li>
-          {{ item['flower'] }}: {{ item['quantity'] }} x ${{ '%.2f' % item['price'] }} = ${{ '%.2f' % (item['quantity'] * item['price']) }}
+          {{ item['flower'] }}: {{ item['quantity'] }} x
+          ${{ '%.2f' % item['price'] }} =
+          ${{ '%.2f' % (item['quantity'] * item['price']) }}
           <a href="{{ url_for('remove_from_cart', flower=item['flower']) }}">Remove</a>
         </li>
       {% endfor %}
     </ul>
     <p>Flower Subtotal: ${{ '%.2f' % flower_subtotal }}</p>
+  {% else %}
+    <p>Your cart is empty.</p>
+  {% endif %}
 
-    {% if selected_addons %}
-      <ul>
-        {% for addon, price in selected_addons.items() %}
-          <li>{{ addon }} - ${{ '%.2f' % price }}</li>
-        {% endfor %}
-      </ul>
-      <p>Add-ons Subtotal: ${{ '%.2f' % addon_subtotal }}</p>
-    {% endif %}
+  {% if selected_addons %}
+    <ul>
+      {% for addon, price in selected_addons.items() %}
+        <li>{{ addon }} - ${{ '%.2f' % price }}</li>
+      {% endfor %}
+    </ul>
+    <p>Add-ons Subtotal: ${{ '%.2f' % addon_subtotal }}</p>
+  {% endif %}
 
-    <h4>Total: ${{ '%.2f' % total }}</h4>
+  <h4>Total: ${{ '%.2f' % total }}</h4>
 
+  {% if cart %}
     <form action="{{ url_for('checkout') }}" method="post">
       <label for="customer_name_checkout">Your Name:</label>
       <input type="text" name="customer_name" id="customer_name_checkout" required>
@@ -100,11 +107,8 @@
         Cancel Order
       </button>
     </form>
-
-  {% else %}
-    <p>Your cart is empty.</p>
-    <h4>Total: $0.00</h4>
   {% endif %}
+
 </section>
 
 {% endblock %}

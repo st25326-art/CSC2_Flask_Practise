@@ -14,7 +14,9 @@
   <ul>
     {% for item in cart %}
       <li>
-        {{ item['flower'] }}: {{ item['quantity'] }} x ${{ '%.2f' % item['price'] }} = ${{ '%.2f' % (item['quantity'] * item['price']) }}
+        {{ item['flower'] }}: {{ item['quantity'] }} x
+        ${{ '%.2f' % item['price'] }} =
+        ${{ '%.2f' % (item['quantity'] * item['price']) }}
       </li>
     {% endfor %}
   </ul>
@@ -31,7 +33,6 @@
   {% endif %}
 
   <h3>Total: ${{ '%.2f' % total }}</h3>
-
   <a href="{{ url_for('home') }}">Back to shop</a>
 </section>
 
